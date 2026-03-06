@@ -1,0 +1,12 @@
+sudo docker run \ 
+          --rm \
+          -ti \
+          --name airgeddon \
+          --net=host \
+          --privileged \
+          --userns=host \
+          -v /media/moussa/Data/workspace/docker-images/wifi-hack-image/airgeddon-image/io:/io \
+          -v /media/moussa/Data/workspace/docker-images/wifi-hack-image/airgeddon-image/plugins:/opt/airgeddon/plugins \
+          -e DISPLAY="${DISPLAY}" \
+          -e XDG_SESSION_TYPE="${XDG_SESSION_TYPE}" \
+          v1s1t0r1sh3r3/airgeddon

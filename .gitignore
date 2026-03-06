@@ -1,0 +1,5 @@
+from-scratch/
+airgeddon-image/io/
+!airgeddon-image/io/dictionaries/
+!airgeddon-image/io/dictionaries/**
+airgeddon-image/plugins/

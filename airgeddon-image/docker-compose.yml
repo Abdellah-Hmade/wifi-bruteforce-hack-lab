@@ -1,0 +1,15 @@
+services:
+  airgeddon:
+    image: v1s1t0r1sh3r3/airgeddon
+    container_name: airgeddon
+    network_mode: "host"
+    privileged: true
+    userns_mode: "host"
+    stdin_open: true  # This is the -i in your command
+    tty: true         # This is the -t in your command
+    environment:
+      - DISPLAY=${DISPLAY}
+      - XDG_SESSION_TYPE=${XDG_SESSION_TYPE}
+    volumes:
+      - ./io:/io
+      - ./plugins:/opt/airgeddon/plugins

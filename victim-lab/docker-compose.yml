@@ -1,0 +1,7 @@
+services:
+  wps_victim:
+    build: .
+    image: debian_wps_victim
+    container_name: wps_victim
+    privileged: true
+    network_mode: host
