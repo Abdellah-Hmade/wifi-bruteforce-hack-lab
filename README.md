@@ -17,7 +17,6 @@ This project sets up a Docker-based lab environment for WiFi security testing an
 - `airgeddon-image/`: Docker setup for the airgeddon tool.
 - `victim-lab/`: Simulated WPS victim access point.
 - `victim-client/`: Simulated client device connecting to the victim.
-- `from-scratch/`: Alternative Dockerfile for building from scratch.
 - `create-hack-lab.sh`: Script to set up the lab.
 - `shutdown-lab.sh`: Script to tear down the lab.
 
