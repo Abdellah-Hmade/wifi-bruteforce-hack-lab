@@ -59,14 +59,17 @@ if command -v apt &> /dev/null; then
      PKG_MANAGER="apt"
      PKG_UPDATE="apt update"
      PKG_INSTALL="apt install -y"
+     DOCKER_PKG="docker.io"
 elif command -v dnf &> /dev/null; then
      PKG_MANAGER="dnf"
      PKG_UPDATE="dnf check-update"
      PKG_INSTALL="dnf install -y"
+     DOCKER_PKG="docker"
 elif command -v pacman &> /dev/null; then
      PKG_MANAGER="pacman"
      PKG_UPDATE="pacman -Sy"
      PKG_INSTALL="pacman -S --noconfirm"
+     DOCKER_PKG="docker"
 else
      echo "Unsupported package manager"
      exit 1
@@ -74,23 +77,43 @@ fi
 
 [[ $VERBOSE == true ]] && echo "Using package manager: $PKG_MANAGER"
 
-# Check if mac80211_hwsim module exists
-if ! modinfo mac80211_hwsim &> /dev/null; then
-     echo "mac80211_hwsim module not found"
-     exit 1
-fi
+# Function to check and install dependencies
+check_and_install() {
+    local cmd=$1
+    local pkg=$2
+    if ! command -v $cmd &> /dev/null; then
+        [[ $VERBOSE == true ]] && echo "Installing $pkg"
+        $PKG_UPDATE && $PKG_INSTALL $pkg
+        if ! command -v $cmd &> /dev/null; then
+            echo "Failed to install $pkg"
+            exit 1
+        fi
+    else
+        [[ $VERBOSE == true ]] && echo "$cmd is already installed"
+    fi
+}
 
-# Execute commands
-systemctl start NetworkManager
-[[ $VERBOSE == true ]] && echo "Loading mac80211_hwsim with $RADIOS radios"
-modprobe mac80211_hwsim radios=$RADIOS
-
+# Check and install dependencies if not skipped
 if [[ $SKIP_DEPS == false ]]; then
-    $PKG_UPDATE && $PKG_INSTALL screen
+    check_and_install docker $DOCKER_PKG
+    check_and_install xterm xterm
+    check_and_install tmux tmux
+    check_and_install wpa_supplicant wpasupplicant
 fi
 
-screen -d -m -S airgeddon bash -c "cd ./airgeddon-image && docker compose run --rm airgeddon"
-screen -d -m -S wps_victim bash -c "cd ./victim-lab && docker compose run --rm wps_victim"
-screen -d -m -S wps_victim bash -c "cd ./victim-client && wpa_supplicant -i wlan2 -c victim_phone.conf"
+# Stop NetworkManager
+#[[ $VERBOSE == true ]] && echo "Stopping NetworkManager"
+#systemctl stop NetworkManager 2>/dev/null || true
+
+# Unload module
+[[ $VERBOSE == true ]] && echo "loading mac80211_hwsim module"
+modprobe mac80211_hwsim radios=3
+
+# Spawn new terminal windows for each process
+# Airgeddon gets wrapped in a tmux session inside xterm so its multi-window attacks work
+# Pass the AIRGEDDON_WINDOWS_HANDLING variable to force Airgeddon to use tmux internally
+xterm -T "airgeddon" -e bash -c "cd ./airgeddon-image && docker compose run -it -e AIRGEDDON_WINDOWS_HANDLING=tmux --rm airgeddon; exec bash" &
+xterm -T "wps_victim" -e bash -c "cd ./victim-lab && docker compose run --rm wps_victim; exec bash" &
+xterm -T "victim_client" -e bash -c "cd ./victim-client && wpa_supplicant -i wlan2 -c victim_phone.conf; exec bash" &
 
 [[ $VERBOSE == true ]] && echo "Lab setup complete"

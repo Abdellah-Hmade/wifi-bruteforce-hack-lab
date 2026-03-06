@@ -42,17 +42,28 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-# Kill screen sessions
-[[ $VERBOSE == true ]] && echo "Killing screen sessions"
-screen -S airgeddon -X quit 2>/dev/null || true
-screen -S wps_victim -X quit 2>/dev/null || true
+# Kill xterm sessions
+[[ $VERBOSE == true ]] && echo "Killing xterm lab windows"
+pkill -f 'xterm -T airgeddon' 2>/dev/null || true
+pkill -f 'xterm -T wps_victim' 2>/dev/null || true
+pkill -f 'xterm -T victim_client' 2>/dev/null || true
+
+# Stop and remove specific lab Docker containers
+[[ $VERBOSE == true ]] && echo "Cleaning up Docker containers"
+docker ps -a -q --filter "name=airgeddon" | xargs -r docker rm -f 2>/dev/null || true
+docker ps -a -q --filter "name=wps_victim" | xargs -r docker rm -f 2>/dev/null || true
+
+# Explicitly kill the wpa_supplicant and hostapd processes
+[[ $VERBOSE == true ]] && echo "Cleaning up lingering networking processes"
+pkill -f 'wpa_supplicant' 2>/dev/null || true
+pkill -f 'hostapd' 2>/dev/null || true
 
 # Unload module
 [[ $VERBOSE == true ]] && echo "Unloading mac80211_hwsim module"
 modprobe -r mac80211_hwsim 2>/dev/null || true
 
-# Stop NetworkManager
-[[ $VERBOSE == true ]] && echo "Stopping NetworkManager"
-systemctl stop NetworkManager 2>/dev/null || true
+# Start NetworkManager
+#[[ $VERBOSE == true ]] && echo "Starting NetworkManager"
+#systemctl start NetworkManager 2>/dev/null || true
 
 [[ $VERBOSE == true ]] && echo "Lab shutdown complete"
